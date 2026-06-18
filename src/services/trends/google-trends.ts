@@ -1,0 +1,160 @@
+import { z } from "zod";
+import googleTrends from "google-trends-api";
+import { topTrends } from "@/lib/mock-data";
+
+export const TrendDataPointSchema = z.object({
+  date: z.string(),
+  value: z.number(),
+});
+
+export const GoogleTrendsResultSchema = z.object({
+  keyword: z.string(),
+  trendData: z.array(TrendDataPointSchema).min(1),
+  currentScore: z.number(),
+  growthRate: z.number(),
+});
+
+export type TrendDataPoint = z.infer<typeof TrendDataPointSchema>;
+export type GoogleTrendsResult = z.infer<typeof GoogleTrendsResultSchema>;
+
+const DAYS = 30;
+
+interface GoogleTimelineResponse {
+  default?: {
+    timelineData?: Array<{
+      formattedTime?: string;
+      time?: string;
+      value?: number[];
+    }>;
+  };
+}
+
+export async function getGoogleTrends(
+  keyword: string,
+): Promise<GoogleTrendsResult> {
+  const normalizedKeyword = keyword.trim();
+
+  if (!normalizedKeyword) {
+    throw new Error("Keyword is required");
+  }
+
+  try {
+    const endTime = new Date();
+    const startTime = new Date();
+    startTime.setDate(endTime.getDate() - DAYS);
+
+    const raw = await googleTrends.interestOverTime({
+      keyword: normalizedKeyword,
+      startTime,
+      endTime,
+    });
+
+    const parsed = parseGoogleTimeline(raw);
+    const trendData = normalizeTrendData(parsed, DAYS);
+
+    if (trendData.length === 0) {
+      throw new Error("Google Trends returned empty timeline");
+    }
+
+    const currentScore = trendData[trendData.length - 1]?.value ?? 0;
+    const growthRate = calculateGrowthRate(trendData);
+
+    return GoogleTrendsResultSchema.parse({
+      keyword: normalizedKeyword,
+      trendData,
+      currentScore,
+      growthRate,
+    });
+  } catch {
+    return buildMockTrendsFallback(normalizedKeyword);
+  }
+}
+
+function parseGoogleTimeline(raw: string): GoogleTimelineResponse {
+  const parsed: unknown = JSON.parse(raw);
+  return parsed as GoogleTimelineResponse;
+}
+
+function normalizeTrendData(
+  response: GoogleTimelineResponse,
+  maxPoints: number,
+): TrendDataPoint[] {
+  const timeline = response.default?.timelineData ?? [];
+
+  return timeline
+    .map((point) => {
+      const value = point.value?.[0] ?? 0;
+      const date = point.time
+        ? new Date(Number(point.time) * 1000).toISOString().slice(0, 10)
+        : (point.formattedTime ?? "");
+
+      return {
+        date,
+        value: clamp(value, 0, 100),
+      };
+    })
+    .filter((point) => point.date.length > 0)
+    .slice(-maxPoints);
+}
+
+function calculateGrowthRate(trendData: TrendDataPoint[]): number {
+  if (trendData.length < 2) return 0;
+
+  const first = trendData[0]?.value ?? 0;
+  const last = trendData[trendData.length - 1]?.value ?? 0;
+
+  if (first === 0) {
+    return last > 0 ? 100 : 0;
+  }
+
+  return Math.round(((last - first) / first) * 100);
+}
+
+export function buildMockTrendsFallback(keyword: string): GoogleTrendsResult {
+  const matched = topTrends.find(
+    (trend) => trend.name.toLowerCase() === keyword.toLowerCase(),
+  );
+
+  const currentScore = matched?.score ?? 50;
+  const growthRate = matched?.growth ?? 10;
+  const trendData = buildMockTrendSeries(currentScore, growthRate);
+
+  return GoogleTrendsResultSchema.parse({
+    keyword,
+    trendData,
+    currentScore: trendData[trendData.length - 1]?.value ?? currentScore,
+    growthRate,
+  });
+}
+
+function buildMockTrendSeries(
+  currentScore: number,
+  growthRate: number,
+): TrendDataPoint[] {
+  const points: TrendDataPoint[] = [];
+  const now = new Date();
+  const startValue = clamp(
+    Math.round(currentScore / (1 + growthRate / 100)),
+    0,
+    100,
+  );
+
+  for (let index = 0; index < DAYS; index += 1) {
+    const date = new Date(now);
+    date.setDate(now.getDate() - (DAYS - 1 - index));
+
+    const progress = index / Math.max(DAYS - 1, 1);
+    const value = Math.round(startValue + (currentScore - startValue) * progress);
+
+    points.push({
+      date: date.toISOString().slice(0, 10),
+      value: clamp(value, 0, 100),
+    });
+  }
+
+  return points;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
