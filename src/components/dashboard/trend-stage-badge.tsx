@@ -1,4 +1,4 @@
-import type { TrendStage } from "@/lib/mock-data";
+import type { TrendStage } from "@/types/trend";
 
 const stageStyles: Record<TrendStage, string> = {
   Emerging: "bg-sky-50 text-sky-700 ring-sky-600/12",

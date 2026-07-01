@@ -1,6 +1,5 @@
 import { z } from "zod";
 import googleTrends from "google-trends-api";
-import { topTrends } from "@/lib/mock-data";
 
 export const TrendDataPointSchema = z.object({
   date: z.string(),
@@ -38,36 +37,32 @@ export async function getGoogleTrends(
     throw new Error("Keyword is required");
   }
 
-  try {
-    const endTime = new Date();
-    const startTime = new Date();
-    startTime.setDate(endTime.getDate() - DAYS);
+  const endTime = new Date();
+  const startTime = new Date();
+  startTime.setDate(endTime.getDate() - DAYS);
 
-    const raw = await googleTrends.interestOverTime({
-      keyword: normalizedKeyword,
-      startTime,
-      endTime,
-    });
+  const raw = await googleTrends.interestOverTime({
+    keyword: normalizedKeyword,
+    startTime,
+    endTime,
+  });
 
-    const parsed = parseGoogleTimeline(raw);
-    const trendData = normalizeTrendData(parsed, DAYS);
+  const parsed = parseGoogleTimeline(raw);
+  const trendData = normalizeTrendData(parsed, DAYS);
 
-    if (trendData.length === 0) {
-      throw new Error("Google Trends returned empty timeline");
-    }
-
-    const currentScore = trendData[trendData.length - 1]?.value ?? 0;
-    const growthRate = calculateGrowthRate(trendData);
-
-    return GoogleTrendsResultSchema.parse({
-      keyword: normalizedKeyword,
-      trendData,
-      currentScore,
-      growthRate,
-    });
-  } catch {
-    return buildMockTrendsFallback(normalizedKeyword);
+  if (trendData.length === 0) {
+    throw new Error("Google Trends returned empty timeline");
   }
+
+  const currentScore = trendData[trendData.length - 1]?.value ?? 0;
+  const growthRate = calculateGrowthRate(trendData);
+
+  return GoogleTrendsResultSchema.parse({
+    keyword: normalizedKeyword,
+    trendData,
+    currentScore,
+    growthRate,
+  });
 }
 
 function parseGoogleTimeline(raw: string): GoogleTimelineResponse {
@@ -108,51 +103,6 @@ function calculateGrowthRate(trendData: TrendDataPoint[]): number {
   }
 
   return Math.round(((last - first) / first) * 100);
-}
-
-export function buildMockTrendsFallback(keyword: string): GoogleTrendsResult {
-  const matched = topTrends.find(
-    (trend) => trend.name.toLowerCase() === keyword.toLowerCase(),
-  );
-
-  const currentScore = matched?.score ?? 50;
-  const growthRate = matched?.growth ?? 10;
-  const trendData = buildMockTrendSeries(currentScore, growthRate);
-
-  return GoogleTrendsResultSchema.parse({
-    keyword,
-    trendData,
-    currentScore: trendData[trendData.length - 1]?.value ?? currentScore,
-    growthRate,
-  });
-}
-
-function buildMockTrendSeries(
-  currentScore: number,
-  growthRate: number,
-): TrendDataPoint[] {
-  const points: TrendDataPoint[] = [];
-  const now = new Date();
-  const startValue = clamp(
-    Math.round(currentScore / (1 + growthRate / 100)),
-    0,
-    100,
-  );
-
-  for (let index = 0; index < DAYS; index += 1) {
-    const date = new Date(now);
-    date.setDate(now.getDate() - (DAYS - 1 - index));
-
-    const progress = index / Math.max(DAYS - 1, 1);
-    const value = Math.round(startValue + (currentScore - startValue) * progress);
-
-    points.push({
-      date: date.toISOString().slice(0, 10),
-      value: clamp(value, 0, 100),
-    });
-  }
-
-  return points;
 }
 
 function clamp(value: number, min: number, max: number): number {

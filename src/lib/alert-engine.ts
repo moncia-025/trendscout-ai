@@ -1,4 +1,4 @@
-import type { Trend } from "@/types/trend";
+import type { EngineTrend } from "@/types/trend";
 import type { TrendForecast } from "@/types/forecast";
 
 export interface TrendAlert {
@@ -20,7 +20,7 @@ const TITLES: Record<AlertLevel, string> = {
 };
 
 export function generateTrendAlert(
-  trend: Trend,
+  trend: EngineTrend,
   forecast: TrendForecast,
 ): TrendAlert {
   const level = getAlertLevel(trend.score, forecast.forecast90);
@@ -51,7 +51,7 @@ function getAlertLevel(score: number, forecast90: number): AlertLevel {
 }
 
 function buildMessage(
-  trend: Trend,
+  trend: EngineTrend,
   forecast: TrendForecast,
   level: AlertLevel,
 ): string {
@@ -73,7 +73,7 @@ function buildMessage(
 }
 
 function buildAction(
-  trend: Trend,
+  trend: EngineTrend,
   forecast: TrendForecast,
   level: AlertLevel,
 ): string {

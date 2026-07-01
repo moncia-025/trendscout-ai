@@ -1,4 +1,4 @@
-import type { TrendStage } from "@/lib/mock-data";
+import type { TrendStage } from "@/types/trend";
 
 export interface OpportunityScoreInput {
   /** 趋势热度，0–100 */

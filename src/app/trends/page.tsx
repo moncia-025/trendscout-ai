@@ -4,25 +4,34 @@ import { useCallback, useEffect, useState } from "react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { ScoreBar } from "@/components/dashboard/score-bar";
 import { SectionHeader } from "@/components/dashboard/section-header";
-import { topTrends } from "@/lib/mock-data";
+import { AnalysisState } from "@/components/trend-analysis/analysis-state";
+import { parseDefaultQueries } from "@/types/trend";
 import type { GoogleTrendsResult } from "@/services/trends/google-trends";
 
-const DEFAULT_KEYWORD = "Coquette";
+const DEFAULT_KEYWORD = parseDefaultQueries()[0] ?? "";
 
 export default function TrendsPage() {
   const [keyword, setKeyword] = useState(DEFAULT_KEYWORD);
   const [data, setData] = useState<GoogleTrendsResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
 
   const fetchTrends = useCallback(async (searchKeyword: string) => {
+    const normalized = searchKeyword.trim();
+
+    if (!normalized) {
+      setData(null);
+      setError(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const response = await fetch(
-        `/api/trends?keyword=${encodeURIComponent(searchKeyword)}`,
+        `/api/trends?keyword=${encodeURIComponent(normalized)}`,
       );
       const result: unknown = await response.json();
 
@@ -54,13 +63,26 @@ export default function TrendsPage() {
   }, []);
 
   useEffect(() => {
-    void fetchTrends(DEFAULT_KEYWORD);
+    if (DEFAULT_KEYWORD) {
+      void fetchTrends(DEFAULT_KEYWORD);
+    }
   }, [fetchTrends]);
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void fetchTrends(keyword.trim() || DEFAULT_KEYWORD);
+    void fetchTrends(keyword);
   }
+
+  const quickQueries = parseDefaultQueries();
+  const status = loading
+    ? "loading"
+    : error
+      ? "error"
+      : data
+        ? "success"
+        : keyword.trim()
+          ? "empty"
+          : "empty";
 
   return (
     <div className="min-h-full bg-[#fafafa]">
@@ -75,7 +97,7 @@ export default function TrendsPage() {
             Google Trends 数据源
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500">
-            查询关键词最近 30 天搜索热度，Google 不可用时自动回退本地 mock 数据
+            查询关键词最近 30 天搜索热度（真实 Google Trends API，无本地 Mock）
           </p>
         </div>
       </div>
@@ -89,48 +111,52 @@ export default function TrendsPage() {
             meta={fetchedAt ? formatGeneratedAt(fetchedAt) : undefined}
           />
 
-          <form onSubmit={handleSearch} className="mb-6 flex flex-col gap-3 sm:flex-row">
+          <form
+            onSubmit={handleSearch}
+            className="mb-6 flex flex-col gap-3 sm:flex-row"
+          >
             <input
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
-              placeholder="输入关键词，如 Coquette"
-              className="flex-1 rounded-lg border border-zinc-200/80 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none ring-zinc-900/5 focus:border-zinc-300 focus:ring-2"
+              placeholder="输入关键词"
+              className="flex-1 rounded-lg border border-zinc-200/80 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-zinc-300 focus:ring-2 focus:ring-zinc-900/5"
             />
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60"
+              className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
             >
               查询
             </button>
           </form>
 
-          <div className="mb-6 flex flex-wrap gap-2">
-            {topTrends.map((trend) => (
-              <button
-                key={trend.slug}
-                type="button"
-                onClick={() => {
-                  setKeyword(trend.name);
-                  void fetchTrends(trend.name);
-                }}
-                className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700 transition-colors hover:bg-zinc-200"
-              >
-                {trend.name}
-              </button>
-            ))}
-          </div>
-
-          {loading ? <TrendsSkeleton /> : null}
-
-          {!loading && error ? (
-            <div className="rounded-xl border border-red-200/80 bg-red-50/40 p-5">
-              <p className="text-sm font-medium text-red-800">数据加载失败</p>
-              <p className="mt-2 text-sm text-red-600">{error}</p>
+          {quickQueries.length > 0 ? (
+            <div className="mb-6 flex flex-wrap gap-2">
+              {quickQueries.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => {
+                    setKeyword(item);
+                    void fetchTrends(item);
+                  }}
+                  className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700 hover:bg-zinc-200"
+                >
+                  {item}
+                </button>
+              ))}
             </div>
           ) : null}
 
-          {!loading && !error && data ? (
+          {status !== "success" ? (
+            <AnalysisState
+              status={status}
+              error={error}
+              emptyTitle="输入关键词查询 Google Trends"
+            />
+          ) : null}
+
+          {status === "success" && data ? (
             <div className="space-y-6">
               <div className="grid gap-4 sm:grid-cols-3">
                 <MetricCard label="关键词" value={data.keyword} />
@@ -140,15 +166,12 @@ export default function TrendsPage() {
                   value={`${data.growthRate > 0 ? "+" : ""}${data.growthRate}%`}
                 />
               </div>
-
               <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/40 p-5">
                 <p className="mb-4 text-sm font-medium text-zinc-900">
                   最近 30 天热度
                 </p>
-                <div className="mb-4">
-                  <ScoreBar score={data.currentScore} />
-                </div>
-                <div className="max-h-72 space-y-1.5 overflow-y-auto">
+                <ScoreBar score={data.currentScore} />
+                <div className="mt-4 max-h-72 space-y-1.5 overflow-y-auto">
                   {data.trendData.map((point) => (
                     <div key={point.date} className="flex items-center gap-3">
                       <span className="w-16 shrink-0 text-xs tabular-nums text-zinc-400">
@@ -180,19 +203,6 @@ function MetricCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-zinc-200/60 bg-zinc-50/40 px-4 py-3">
       <p className="text-xs text-zinc-400">{label}</p>
       <p className="mt-1 text-lg font-semibold text-zinc-900">{value}</p>
-    </div>
-  );
-}
-
-function TrendsSkeleton() {
-  return (
-    <div className="animate-pulse space-y-4">
-      <div className="grid gap-4 sm:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="h-20 rounded-lg bg-zinc-100" />
-        ))}
-      </div>
-      <div className="h-72 rounded-xl bg-zinc-100" />
     </div>
   );
 }

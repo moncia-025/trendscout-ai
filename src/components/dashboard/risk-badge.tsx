@@ -1,4 +1,4 @@
-import type { RiskLevel } from "@/lib/mock-data";
+import type { RiskLevel } from "@/types/trend";
 
 const riskStyles: Record<RiskLevel, string> = {
   Low: "bg-emerald-50 text-emerald-700 ring-emerald-600/12",

@@ -1,4 +1,4 @@
-import type { Trend, TrendStage } from "@/types/trend";
+import type { EngineTrend, TrendStage } from "@/types/trend";
 import type { TrendForecast } from "@/types/forecast";
 
 interface ForecastStageConfig {
@@ -40,7 +40,7 @@ const FORECAST_MAP: Record<TrendStage, ForecastStageConfig> = {
   },
 };
 
-export function forecastTrend(trend: Trend): TrendForecast {
+export function forecastTrend(trend: EngineTrend): TrendForecast {
   const config = FORECAST_MAP[trend.stage];
   const confidence = clamp(
     Math.round(trend.score * 0.7 + trend.growth * 0.3),
