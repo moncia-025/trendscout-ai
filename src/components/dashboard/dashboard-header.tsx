@@ -36,7 +36,7 @@ export function DashboardHeader() {
             href="/forecast"
             className="transition-colors hover:text-zinc-900"
           >
-            趋势预测
+            趋势分析
           </Link>
           <Link
             href="/comparison"
@@ -54,7 +54,7 @@ export function DashboardHeader() {
             href="/stream-analysis"
             className="transition-colors hover:text-zinc-900"
           >
-            流式分析
+            Workflow
           </Link>
         </nav>
 

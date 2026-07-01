@@ -33,6 +33,22 @@ export function AnalysisState({
       <div className="rounded-xl border border-red-200/80 bg-red-50/40 p-6">
         <p className="text-sm font-medium text-red-800">分析失败</p>
         <p className="mt-2 text-sm text-red-600">{error ?? "请稍后重试"}</p>
+        {error?.includes("Dify") ? (
+          <p className="mt-3 text-xs text-red-500/90">
+            提示：Dify 未启动时页面仍可正常浏览，启动 Dify 并配置 .env.local 后再点击分析。
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (status === "idle") {
+    return (
+      <div className="rounded-xl border border-dashed border-zinc-200/80 bg-zinc-50/40 p-8 text-center">
+        <p className="text-sm font-medium text-zinc-700">
+          {emptyTitle}
+        </p>
+        <p className="mt-2 text-sm text-zinc-500">{emptyDescription}</p>
       </div>
     );
   }

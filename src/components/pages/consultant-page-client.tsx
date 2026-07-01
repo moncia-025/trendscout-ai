@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { AnalysisState } from "@/components/trend-analysis/analysis-state";
 import { InsightCard } from "@/components/trend-analysis/insight-card";
@@ -14,12 +13,6 @@ import { parseDefaultQueries } from "@/types/trend";
 export function ConsultantPageClient() {
   const { status, data, error, analyze } = useTrendAnalysis();
   const defaultQuery = parseDefaultQueries()[0] ?? "";
-
-  useEffect(() => {
-    if (defaultQuery) {
-      void analyze(defaultQuery);
-    }
-  }, [analyze, defaultQuery]);
 
   return (
     <div className="min-h-full bg-[#fafafa]">

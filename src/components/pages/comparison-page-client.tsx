@@ -11,7 +11,7 @@ import { parseDefaultQueries } from "@/types/trend";
 export function ComparisonPageClient() {
   const [queries, setQueries] = useState(parseDefaultQueries());
   const [input, setInput] = useState("");
-  const { status, items, error } = useMultiTrendAnalysis(queries);
+  const { status, items, error, refresh } = useMultiTrendAnalysis(queries);
 
   const ranked = [...items].sort(
     (a, b) => b.opportunity_score - a.opportunity_score,
@@ -62,6 +62,27 @@ export function ComparisonPageClient() {
           badge="Compare"
         />
 
+        {status === "idle" ? (
+          <div className="flex flex-col items-start gap-3">
+            <AnalysisState
+              status="idle"
+              emptyTitle="添加关键词后，点击开始对比"
+              emptyDescription={
+                queries.length > 0
+                  ? `当前对比：${queries.join("、")}`
+                  : "请先添加至少一个关键词"
+              }
+            />
+            <button
+              type="button"
+              disabled={queries.length === 0}
+              onClick={() => void refresh()}
+              className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+            >
+              开始对比分析
+            </button>
+          </div>
+        ) : null}
         {status === "loading" ? <AnalysisState status="loading" /> : null}
         {status === "error" ? (
           <AnalysisState status="error" error={error} />

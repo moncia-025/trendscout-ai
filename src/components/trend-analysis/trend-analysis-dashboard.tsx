@@ -71,6 +71,23 @@ export function TrendAnalysisDashboard() {
             badge="Ranking"
           />
 
+          {multi.status === "idle" ? (
+            <div className="flex flex-col items-start gap-3">
+              <AnalysisState
+                status="idle"
+                emptyTitle="点击加载默认关键词排行"
+                emptyDescription={`将依次分析：${DEFAULT_QUERIES.join("、") || "未配置"}`}
+              />
+              <button
+                type="button"
+                onClick={() => void multi.refresh()}
+                className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+              >
+                加载默认排行
+              </button>
+            </div>
+          ) : null}
+
           {multi.status === "loading" && multi.items.length === 0 ? (
             <AnalysisState status="loading" />
           ) : null}

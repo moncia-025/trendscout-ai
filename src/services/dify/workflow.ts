@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formatAnalysisError } from "@/lib/format-analysis-error";
 import {
   TrendAnalysisSchema,
   type TrendAnalysis,
@@ -57,13 +58,7 @@ export async function runDifyTrendWorkflow(
       signal: controller.signal,
     });
   } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
-      throw new Error(
-        `Dify workflow timed out after ${Math.round(timeoutMs / 1000)}s. Check Dify is running and reduce concurrent requests.`,
-      );
-    }
-
-    throw err;
+    throw new Error(formatAnalysisError(err));
   } finally {
     clearTimeout(timer);
   }
@@ -92,7 +87,11 @@ export async function runDifyTrendWorkflow(
       );
     }
 
-    throw new Error(`Dify workflow failed (${response.status}): ${message}`);
+    throw new Error(
+      formatAnalysisError(
+        new Error(`Dify workflow failed (${response.status}): ${message}`),
+      ),
+    );
   }
 
   const payload = (await response.json()) as DifyWorkflowRunResponse;

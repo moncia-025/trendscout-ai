@@ -2,57 +2,35 @@
 
 **AI 驱动的跨境电商趋势发现与选品决策平台**
 
-*Discover trends early. Forecast lifecycle. Decide SKUs with AI.*
+*Discover trends early. Analyze with Dify Workflow. Decide SKUs with AI.*
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Vitest](https://img.shields.io/badge/Vitest-41%20tests-6E9F18?logo=vitest&logoColor=white)](./package.json)
-[![DeepSeek](https://img.shields.io/badge/DeepSeek-API-0066FF)](https://www.deepseek.com/)
+[![Dify](https://img.shields.io/badge/Dify-Workflow-1C64F2)](https://dify.ai/)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel&logoColor=white)](https://trendscout-ai-pied.vercel.app)
 
-[Live Demo](https://trendscout-ai-pied.vercel.app) | [Source Code](https://github.com/moncia-025/trendscout-ai) | [Project Review](./docs/project-review.md)
+[Live Demo](https://trendscout-ai-pied.vercel.app) | [Source Code](https://github.com/moncia-025/trendscout-ai) | [V2 接入说明](./docs/v2-dify-refactor.md)
 
 ---
 
-> 帮助跨境卖家 **提前发现趋势**，通过 **Forecast Engine** 预测生命周期，结合 **DeepSeek** 输出结构化选品分析与实时流式解读，降低备货决策风险。
-
----
-
-## Screenshots
-
-| Dashboard | Forecast | AI Consultant |
-|:---:|:---:|:---:|
-| ![Dashboard](./docs/screenshots/dashboard.png) | ![Forecast](./docs/screenshots/forecast.png) | ![Consultant](./docs/screenshots/consultant.png) |
+> V2 版本通过 **Dify Multi-Agent Workflow** 返回结构化选品分析，采用 `api → service → view` 分层，已移除全部 Mock 数据。
 
 ---
 
 ## Features
 
-### Trend Discovery
-趋势发现与排行 Dashboard，聚合热度、增速、阶段与市场信号，快速定位潜力趋势。
+### Dify Workflow 趋势分析
+输入关键词，调用 Dify Workflow 返回 `TrendAnalysis` JSON（阶段、评分、风险、SKU 建议）。
 
-### Trend Forecast Engine
-基于 `TrendStage` 的规则预测引擎，输出 30 / 60 / 90 天评分曲线与 confidence。
+### 趋势排行与对比
+支持默认关键词批量分析与 Opportunity Score 排序对比。
 
-### AI Forecast Analysis
-DeepSeek 批量解读预测结果，生成中文 summary、机会点、风险与 SKU 建议（JSON + Zod 校验）。
+### Google Trends
+`/trends` 页面查询关键词 30 天搜索热度（真实 API，无 Mock 回退）。
 
-### AI Product Consultant
-综合 topTrends + forecastData，输出推荐趋势、SKU 组合、机会评分与行动建议。
-
-### Trend Comparison Engine
-多趋势加权对比（热度 40% / 预测 30% / 增速 20% / 可信度 10%），辅助横向决策。
-
-### AI Alert Center
-Alert Engine 根据 `forecast90 - score` 阈值生成 high / medium / low 预警与 action 文案。
-
-### Google Trends Integration
-关键词 30 天热度曲线查询，对接 `google-trends-api`，失败时本地 fallback。
-
-### Real-time Streaming Analysis
-基于 SSE 的 DeepSeek 流式输出，Route Handler + `ReadableStream`，支持客户端中断。
+### 规则引擎（保留）
+`forecast-engine` / `alert-engine` / `opportunity-engine` 仍保留单元测试，供后续接回 UI。
 
 ---
 
@@ -60,53 +38,28 @@ Alert Engine 根据 `forecast90 - score` 阈值生成 high / medium / low 预警
 
 | 分类 | 技术 | 用途 |
 | --- | --- | --- |
-| Framework | Next.js 16 App Router | SSR / RSC / Route Handler |
+| Framework | Next.js 16 App Router | Pages & Route Handler |
 | UI | React 19 / Tailwind CSS 4 | 组件化 UI |
 | Language | TypeScript 5 | 全栈类型安全 |
-| Validation | Zod | API 与 LLM JSON runtime 校验 |
-| AI | DeepSeek API / OpenAI SDK | 结构化报告与 SSE |
-| Data | Google Trends API | 搜索热度信号 |
-| Streaming | SSE / ReadableStream | 实时 AI 输出 |
-| Testing | Vitest | Engine 单元测试 |
+| Validation | Zod | API 与 Workflow 输出校验 |
+| AI | Dify Workflow API | Multi-Agent 趋势分析 |
+| Data | google-trends-api | 搜索热度信号 |
+| HTTP | Axios | 前端 API 层 |
+| Testing | Vitest | Engine + 错误格式化测试 |
 | Deploy | Vercel | 生产部署 |
 
 ---
 
-## System Architecture
-
-```mermaid
-graph TD
-    A[Google Trends] --> B[Forecast Engine]
-    B --> C[AI Analysis]
-    C --> D[Alert Engine]
-    D --> E[Product Consultant]
-    B -.-> F[Comparison Engine]
-    B -.-> G[Opportunity Engine]
-    C --> H[Dashboard]
-    E --> H
-    D --> H
-```
-
-1. Google Trends - 外部搜索信号 (`/api/trends`)
-2. Forecast Engine - 90 天预测 (`src/lib/forecast-engine.ts`)
-3. AI Analysis - DeepSeek 解读 (`/api/forecast-analysis`)
-4. Alert Engine - 规则预警 (`src/lib/alert-engine.ts`)
-5. Product Consultant - 选品方案 (`/api/product-consultant`)
-
----
-
-## Project Structure
+## Architecture
 
 ```
-src/
-├── app/                 # Pages & API Routes
-├── components/          # dashboard / forecast / trend
-├── lib/                 # forecast / alert / opportunity engines
-│   └── __tests__/       # Vitest
-├── services/            # DeepSeek / Google Trends
-├── hooks/
-├── types/
-└── data/
+View (pages/components)
+  → hooks (useTrendAnalysis / useMultiTrendAnalysis)
+  → services/trend-analysis.ts
+  → api/trends.ts + api/request.ts
+  → POST /api/trend-analysis
+  → services/dify/workflow.ts
+  → Dify Workflow API
 ```
 
 ---
@@ -115,23 +68,22 @@ src/
 
 | Endpoint | Method | 说明 |
 | --- | ---: | --- |
+| /api/trend-analysis | POST | Dify Workflow 趋势分析 |
 | /api/trends | GET | Google Trends 30 天热度 |
-| /api/forecast-analysis | POST | AI 预测分析 JSON |
-| /api/product-consultant | GET | AI 选品顾问 JSON |
-| /api/alert-analysis | POST | 预警 AI 解读 JSON |
-| /api/ai-stream | POST | DeepSeek SSE 流式 |
-| /api/stream-analysis | GET | SSE 模拟 Demo |
 
 ---
 
 ## Local Development
 
 ```bash
+cp .env.example .env.local   # 填入 DIFY_API_KEY
 npm install
 npm run dev
 ```
 
 访问 http://localhost:3000
+
+**注意：** 本地开发需同时启动 Dify 服务（默认 `http://localhost/v1`）。Dify 未启动时页面仍可浏览，点击分析会提示连接失败。
 
 ---
 
@@ -139,12 +91,11 @@ npm run dev
 
 | 变量 | 必填 | 说明 |
 | --- | :---: | --- |
-| DEEPSEEK_API_KEY | 是 | DeepSeek API Key |
-
-```bash
-# .env.local
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
-```
+| DIFY_API_KEY | 是 | Dify 工作流 API 密钥 |
+| DIFY_WORKFLOW_ID | 否 | Workflow ID，默认已内置 |
+| DIFY_API_BASE_URL | 否 | 默认 `http://localhost/v1` |
+| DIFY_WORKFLOW_TIMEOUT_MS | 否 | 服务端超时，默认 240000 |
+| NEXT_PUBLIC_DEFAULT_QUERIES | 否 | 默认批量关键词，逗号分隔 |
 
 ---
 
@@ -152,48 +103,20 @@ DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
 
 ```bash
 npm test
-npm run test:watch
-npx vitest run --coverage
+npm run build
 ```
-
-- Vitest v4
-- **41 tests passed**
-- 覆盖 Forecast Engine / Alert Engine / Opportunity Engine（100% Lines）
 
 ---
 
 ## Deployment
 
-- Platform: Vercel
-- URL: https://trendscout-ai-pied.vercel.app
-
----
-
-## Roadmap
-
-- Real Google Trends Pipeline
-- AI Report Cache
-- User Authentication
-- PDF Export
-- Trend Watchlist
-
----
-
-## Highlights
-
-| 亮点 | 说明 |
-| --- | --- |
-| DeepSeek Integration | OpenAI SDK + json_object + Zod |
-| SSE Streaming | ReadableStream + AbortController |
-| Forecast Engine | 纯函数引擎，100% 单测 |
-| Zod Validation | API + LLM 双层校验 |
-| AI Product Consultant | 结构化选品 JSON |
-| Engine Test Suite | 41 个 Vitest 用例 |
+- Platform: Vercel — https://trendscout-ai-pied.vercel.app
+- **线上需配置公网可访问的 Dify API 地址**，本地 `localhost` 无法被 Vercel 调用
 
 ---
 
 ## Author
 
-**陈子恒** - AI 前端方向
+**陈子恒** — AI 前端方向
 
 GitHub: https://github.com/moncia-025

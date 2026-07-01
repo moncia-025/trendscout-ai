@@ -1,4 +1,5 @@
 import axios, { type AxiosError } from "axios";
+import { formatAnalysisError } from "@/lib/format-analysis-error";
 
 export const request = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "",
@@ -17,6 +18,6 @@ request.interceptors.response.use(
       error.message ??
       "Request failed";
 
-    return Promise.reject(new Error(message));
+    return Promise.reject(new Error(formatAnalysisError(message)));
   },
 );

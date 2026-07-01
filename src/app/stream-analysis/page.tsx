@@ -18,13 +18,13 @@ export default function StreamAnalysisPage() {
       <div className="border-b border-zinc-200/80 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8 lg:px-12">
           <p className="text-xs font-medium tracking-wide text-zinc-400">
-            TrendScout AI · 实时分析
+            TrendScout AI · Dify Workflow
           </p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
-            Dify Workflow 趋势分析
+            Workflow 趋势分析
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-zinc-500">
-            提交 query 后由 Dify Multi-Agent Workflow 返回完整 JSON 分析结果
+            提交关键词后由 Dify Multi-Agent Workflow 返回完整 JSON 分析结果
           </p>
           <div className="mt-6">
             <TrendSearchForm

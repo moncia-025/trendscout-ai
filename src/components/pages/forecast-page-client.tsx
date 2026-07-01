@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { AnalysisState } from "@/components/trend-analysis/analysis-state";
 import { TrendAnalysisView } from "@/components/trend-analysis/trend-analysis-view";
@@ -12,12 +11,6 @@ export function ForecastPageClient() {
   const { status, data, error, analyze } = useTrendAnalysis();
   const defaultQuery = parseDefaultQueries()[0] ?? "";
 
-  useEffect(() => {
-    if (defaultQuery) {
-      void analyze(defaultQuery);
-    }
-  }, [analyze, defaultQuery]);
-
   return (
     <div className="min-h-full bg-[#fafafa]">
       <DashboardHeader />
@@ -28,10 +21,10 @@ export function ForecastPageClient() {
             TrendScout AI · 趋势预测
           </p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900">
-            趋势预测中心
+            趋势分析中心
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-zinc-500">
-            基于 Dify Workflow 返回的趋势阶段、评分与机会分析
+            由 Dify Workflow 返回趋势阶段、评分与机会分析（需本地 Dify 服务可用）
           </p>
           <div className="mt-6">
             <TrendSearchForm
